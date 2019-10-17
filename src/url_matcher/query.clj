@@ -1,0 +1,104 @@
+(ns url-matcher.query
+  "Processes query language and returns abstract representation of it"
+  (:require [clj-antlr.core :as antlr]
+            [clojure.java.io :refer [resource]]
+            [url-matcher.util :refer [find-first zip-transform->]]
+            [clojure.zip :as zip]
+            [clojure.string :as s])
+  (:import [clj_antlr ParseError]))
+
+(def clauses-ns (find-ns 'url-matcher.query))
+(def ^:dynamic *grammar-path* (.getPath (resource "query.g4")))
+(def ^:dynamic *grammar-root* :query)
+
+(def ^{:doc (str "Parser for query. Use the following syntax for variables: "
+                 "?variable or ?[variable]. See also `query.g4`")}
+  query-dsl-parser (antlr/parser *grammar-path* {:root *grammar-root*}))
+
+(defn clause-type [clause]
+   "Returns type of clause"
+  (cond
+    (string? clause) ::atom
+    (keyword? clause) ::tag
+    (empty? clause) ::empty
+    (nil? clause) ::empty
+
+    :else (let [[t & _] clause] (if (coll? t) ::compound t))))
+
+(def ^{:doc "Returns children of compound clause, otherwise nil is returned"}
+  clause-children rest)
+
+(def ^{:doc "Returns new clause"}
+   make-clause cons)
+
+(defn- replace-children [prototype new-children]
+  (make-clause (first prototype) new-children))
+
+(defmacro defpredicate
+  "Defines predicate on parse node. Use this only for compound nodes,
+   primitive ones can be tested using string? or similar"
+  ([clause-keyword]
+    `(defpredicate ~clause-keyword #{~clause-keyword}))
+  ([clause-keyword condition]
+   (let [n (name clause-keyword), s (symbol (str n "?"))]
+    `(defn ^{:doc (str "Tests if clause is " ~n)} ~s [c#]
+       (~condition (clause-type c#))))))
+
+(defpredicate ::tag)
+(defpredicate ::atom)
+(defpredicate ::variable)
+(defpredicate ::section)
+(defpredicate ::name)
+(defpredicate ::query)
+(defpredicate ::subquery)
+(defpredicate ::pattern)
+(defpredicate ::literal)
+
+(def ^{:doc "Truthy if clause has any punctuation marks in it"}
+  has-punctuation? (some-fn variable? subquery? query?))
+
+(defn make-zipper [root]
+   "Create zipper for clause traversal starting from `root`"
+  (zip/zipper coll? clause-children replace-children root))
+
+(defn remove-atoms [clause]
+  "Keeps compound node, as nodes without type maintain no semantic information"
+  (replace-children clause (remove atom? (clause-children clause))))
+
+(defn pull-name [clause]
+  "Pulls name of `clause` to the upper level so that it is the only child"
+  (if-let [name-clause (find-first name? (clause-children clause))]
+    (replace-children clause (clause-children name-clause))
+    (throw (IllegalStateException. (str "No name for " clause)))))
+
+(defn join-children [clause]
+  (replace-children clause (list (s/join (clause-children clause)))))
+
+(defn flatten-subquery [clause]
+  (make-clause (find-first section? clause)
+               (mapcat clause-children (filter pattern? clause))))
+
+(defn qualify [tag]
+  "Qualifies `tag` with `clauses-ns`"
+  (assert clauses-ns "Clauses namespace should exist")
+
+  (keyword (str clauses-ns) (name tag)))
+
+(defn section-name [[section & _ :as query]]
+  (when-not (section? section)
+    (throw (IllegalArgumentException. (str "Missing section in " query))))
+  (let [[_ name] section] name))
+
+(defn parse [query]
+  "Wrapper for `query-dsl-parser` that strips away unnessary characters
+  and produces sequence of queries grouped by section"
+  (try
+    (clause-children
+      (zip-transform-> {:zipper make-zipper, :root (query-dsl-parser query)}
+        {:zipper zip/seq-zip, :guard tag?, :editor qualify}
+        {:guard has-punctuation? :editor remove-atoms}
+        {:guard literal?, :editor join-children}
+        {:guard variable?, :editor pull-name}
+        {:guard subquery? :editor flatten-subquery}))
+    (catch ParseError pe
+      (throw (IllegalArgumentException. pe)))))
