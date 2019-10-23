@@ -29,9 +29,17 @@
        ::expression "https://twitter.com/shots/1905065-Travel-Icons-pack?list=users&offset=1"}
 
       {::expected nil
-       ::pattern "host(dribbble.com); path(shots/?id); queryparam(offset=?offset);"
+       ::pattern "host(dribbble.com); path(shots/?id); queryparam(offset=?offset); "
        ::expression "https://dribbble.com/shots/1905065-Travel-Icons-pack?list=users"}
+
+      {::expected nil
+       ::pattern "host(?host); path(?p); queryparam(query)"
+       ::expression "https://google.com"}
 
       {::expected [[:host "dribble"]]
        ::pattern "host(?[host].com); path(/?[host]);"
+       ::expression "https://dribble.com/dribble"}
+
+      {::expected [[:host "dribble"]]
+       ::pattern "host(?[host].com); path(/?[host]); queryparam(); jibberrish()"
        ::expression "https://dribble.com/dribble"})))

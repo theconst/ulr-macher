@@ -130,6 +130,11 @@
   (match-to [self contexts pattern]
     (match-section contexts pattern self)))
 
+(extend-type nil
+  IMatchable
+  (match-to [self context pattern]
+    (match-section context pattern "")))
+
 (defn match
   ([contexts pattern expression]
    "Match `pattern` (section + body) to `expression`
