@@ -7,6 +7,7 @@
    (first (filter predicate coll)))
 
 (defn remove-last-char [s]
+  "Removes last characeter from `s`"
   (subs s 0 (dec (count s))))
 
 (defn split-string-at [s position]

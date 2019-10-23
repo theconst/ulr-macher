@@ -86,13 +86,16 @@
     (throw (IllegalStateException. (str "No name for " clause)))))
 
 (defn join-children [clause]
+  "Join children of `clause`"
   (replace-children clause (list (str/join (clause-children clause)))))
 
 (defn flatten-subquery [clause]
+  "Extract pattern subquery from clause"
   (make-clause (find-first section? clause)
                (mapcat clause-children (filter pattern? clause))))
 
 (defn section-name [[section & _ :as query]]
+  "Get section name of a section clause"
   (when-not (section? section)
     (throw (IllegalArgumentException. (str "Missing section in " query))))
   (let [[_ name] section] name))

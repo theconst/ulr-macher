@@ -62,12 +62,14 @@
           (match-success (into-context prefix) suffix)))
       (prefixes-and-suffixes expression))))
 
-(defn match-from [pattern {s ::state, ctx ::context, i ::input :as r}]
+(defn- match-from [pattern {s ::state, ctx ::context, i ::input :as r}]
+  "Match starting from `pattern`"
   (case s
    ::success (match-pattern ctx pattern i)
    ::failure [r]))
 
-(defn match-step [[[head & tail] matches]]
+(defn- match-step [[[head & tail] matches]]
+  "Single step of matching"
   [tail (mapcat (partial match-from head) matches)])
 
 (defmethod match-pattern ::query/compound [context pattern expression]
@@ -83,21 +85,23 @@
 
 
 (defn match-section [contexts pattern expression]
- (let [results (mapcat #(match-pattern %1 pattern expression) contexts)
+  "Match single section of pattern"
+  (let [results (mapcat #(match-pattern %1 pattern expression) contexts)
        partial-matches (filter successful? results)
        exact-matches (filter full? partial-matches)]
-   (if (not-empty exact-matches)
-     {::state ::success, ::results (map ::context exact-matches)}
+    (if (not-empty exact-matches)
+      {::state ::success, ::results (map ::context exact-matches)}
 
-     {::state ::failure
-      ::results (->> results
-                  (filter failed?)
-                  (map #(select-keys % [::context ::input ::message])))})))
+      {::state ::failure
+       ::results (->> results
+                   (filter failed?)
+                   (map #(select-keys % [::context ::input ::message])))})))
 
 (def ^{:doc "Contxext with no bound variables"} empty-context [{}])
 
 (defn- sum-matches [{s1 ::state, rs1 ::results :as r1}
                     {s2 ::state, rs2 ::results :as r2}]
+  "Merges two match results"
   (log/tracef "Summing %s and %s" r1 r2)
 
   (if (= s1 s2)

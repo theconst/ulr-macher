@@ -25,6 +25,7 @@
         result-map))
 
 (defn recognize [queries url-string]
+  "Recognises `url-string` according to `queries`"
   (let [query-matcher (matcher/queries->matcher (query/parse queries))
         expression (url->expression (url/parse url-string))]
     (-> (matcher/apply-matcher query-matcher expression)
@@ -65,7 +66,7 @@
    (catch IllegalArgumentException ex
       (println "Check correctness of input. Cause: " ex))
    (catch Exception ex
-      (println "Unknow error ocurred. Cause " ex)
+      (println "Unknown error ocurred. Cause " ex)
       (exit :unknown-error))))
 
 (defn -main [& args]
