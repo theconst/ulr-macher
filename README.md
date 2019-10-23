@@ -2,9 +2,9 @@
 
 Program that matches URLs
 
-## Installation
+## Building
 
-lein jar
+lein uberjar
 
 ## Usage
 
@@ -14,6 +14,6 @@ lein jar
 
 Type
 
-	$  java -jar url-matcher-0.1.0-standalone.jar --help 
-    
+	  $  java -jar url-matcher-0.1.0-standalone.jar --help
+
 to get descriptions of available options
