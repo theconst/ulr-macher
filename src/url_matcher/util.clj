@@ -21,21 +21,18 @@
         (zip/edit orig editor)
         orig))))
 
-(defn take-second [_ snd]
-  "Function that always returns its second argument"
-  snd)
-
 (defmacro zip-transform [{zipper :zipper, guard :guard, editor :editor, root :root}]
   "Transforms tree starting from `root` using `zipper`
    Trasform is applied using `editor` only if `guard` is true"
   (assert zipper "Zipper should be specified")
   (assert editor "Editor should be specified")
 
-  `(->> (~zipper ~root)
-    (iterate (comp zip/next (make-editor ~guard ~editor)))
-    (take-while (complement zip/end?))
-    (reduce take-second)
-    (zip/root)))
+  `(let [editor# (make-editor ~guard ~editor)]
+     (->> (~zipper ~root)
+      (iterate (comp zip/next editor#))
+      (drop-while (complement zip/end?))
+      (first)
+      (zip/root))))
 
 (defmacro zip-transform-> [{zipper :zipper, root :root} & transform-definitions]
   "Applies multiple transform definitions starting from `root` using."
@@ -47,22 +44,3 @@
   (reduce (fn [r t] `(zip-transform ~(merge {:zipper zipper, :root r} t)))
           root
           transform-definitions))
-
-;;TODO: test besides REPL
-(comment
-
-
-(transform-> [zip/vector-zip [:a :ba :bac]]
-   {:guard (complement coll?) :editor (constantly :b)})
-
-
-(macroexpand '(make-editor nil identity))
-
-
-
-(clojure.pprint/pprint
-  (clojure.walk/macroexpand-all
-    '(transform-> [zip/vector-zip [:a :ba :bac]]
-       {:guard (constantly false) :editor (constantly [:b])})))
-
-)
