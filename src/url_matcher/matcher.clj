@@ -96,11 +96,18 @@
 
 (def ^{:doc "Contxext with no bound variables"} empty-context [{}])
 
-(defn sum-matches [{s1 ::state, rs1 ::results :as r1}
-                   {s2 ::state, rs2 ::results :as r2}]
+(defn- sum-matches [{s1 ::state, rs1 ::results :as r1}
+                    {s2 ::state, rs2 ::results :as r2}]
+  (log/tracef "Summing %s and %s" r1 r2)
+
   (if (= s1 s2)
     {::state s1 ::results (concat rs1 rs2)}
     (find-first successful? [r1 r2])))
+
+(defmacro match-error [pattern expression]
+  `(IllegalArgumentException. (format "Unable to match '%s' to %s"
+                                      ~expression
+                                     " to " ~pattern)))
 
 (defn match
   ([contexts pattern expression]
@@ -119,11 +126,11 @@
      (match-section contexts pattern expression)
 
      (coll? expression)
-     (reduce (partial merge-with sum-matches)
-             (map #(match contexts pattern %1) expression))
+     (reduce sum-matches
+             (map #(match-section contexts pattern %1) expression))
 
      :else
-     (throw (IllegalArgumentException. "Illegal expression type (map, str, coll)"))))
+     (throw (match-error pattern expression))))
   ([pattern expression]
    "Match `pattern` to `expression` in empty `context`"
    (match empty-context pattern expression)))
@@ -131,35 +138,42 @@
 (defn apply-matcher
   "Applies matcher in a given context"
   ([matcher contexts expression]
+    (log/tracef "Applying %s to %s"
+                (:matcher-info (meta  matcher))
+                expression)
     (matcher contexts expression))
   ([matcher expression]
     (matcher empty-context expression)))
 
 (defn make-matcher [pattern]
-  (fn pattern-matcher
-    ^{:matcher-info (str "Matcher for " pattern)}
-    [contexts expression]
-    (match contexts pattern expression)))
+  (with-meta
+    (fn pattern-matcher
+      [contexts expression]
+      (match contexts pattern expression))
+    {:matcher-info (str "Matcher for " pattern)}))
 
 (defn disjunction [matchers]
- (fn dijunction-matcher
-   ^{:matcher-info (str "Disjunction of " (map :matcher-info matchers))}
-   [contexts expression]
-   (->> matchers
-    (map #(%1 contexts expression))
-    (reduce sum-matches {::state ::success, ::results []}))))
+  "Disjunction of `matchers`"
+  (with-meta
+    (fn disjunction-matcher
+      [contexts expression]
+      (->> matchers
+       (map #(apply-matcher %1 contexts expression))
+       (reduce sum-matches {::state ::success, ::results []})))
+    {:matcher-info (str "Disjunction of " (map :matcher-info matchers))}))
 
 (defn conjunction [matchers]
- "Conjunction of `matchers`"
- (fn conjunction-matcher
-   ^{:matcher-info (str "Conjunction of " (map :matcher-info matchers))}
-   [contexts expression]
-   (reduce (fn conjunction-step [{s ::state, contexts ::results :as r} matcher]
-              (case s
-                ::success (matcher contexts expression)
-                ::failure r))
-           {::state ::success, ::results contexts}
-           matchers)))
+  "Conjunction of `matchers`"
+  (with-meta
+   (fn conjunction-matcher
+     [contexts expression]
+     (reduce (fn conjunction-step [{s ::state, contexts ::results :as r} matcher]
+                (case s
+                  ::success (matcher contexts expression)
+                  ::failure r))
+             {::state ::success, ::results contexts}
+             matchers))
+   {:matcher-info (str "Conjunction of " (map :matcher-info matchers))}))
 
 (defn queries->matcher [queries]
   "Converts list of queries to a single matcher in the following fashion:

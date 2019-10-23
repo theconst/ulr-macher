@@ -18,6 +18,16 @@
               (query/make-clause ::query/literal [(str n)])))
         args))
 
+(defn matcher> [& args]
+  "Makes matcher for a pattern specified in `args`"
+  (make-matcher (apply pattern args)))
+
+(defn combine [op & args]
+  (case op
+    :and (conjunction args)
+    :or (disjunction args)
+    op))
+
 (def m+ ^{:doc "Alias for `match-success`"} match-success)
 (def m- ^{:doc "Alias for `match-failure`"} match-failure)
 
@@ -71,7 +81,7 @@
       (pattern :?v :bazz)
       "fizzbazz"
 
-      [{"v" "fizz" "z" "fizz"}]
+      [{"v" "fizz", "z" "fizz"}]
       (pattern :?v :bazz :?z)
       "fizzbazzfizz"
 
@@ -79,7 +89,7 @@
       (pattern "www." :?host "." :?domain)
       "www.google.com"
 
-      [{"domain" "com" "host" "yandex"}]
+      [{"domain" "com", "host" "yandex"}]
       (pattern :->host "www." :?host "." :?domain)
       {"host" "www.yandex.com"}))
 
@@ -105,3 +115,26 @@
          ::matcher/message "Ambiguity for 'v' (old='m', new='')"}]
       (pattern :?v :?v)
       "m")))
+
+(deftest compound-matcher-suite
+  (are [expected matcher expression]
+    (= {::matcher/state ::matcher/success, ::matcher/results expected}
+       (apply-matcher matcher expression))
+
+  [{"domain" "dribble.com"}, {"domain" "integers"}]
+  (combine :or
+           (matcher> :->host :?domain)
+           (matcher> :->query "domain=" :?domain))
+  {"host" "dribble.com", "query" "domain=integers"}
+
+  [{"domain" "dribble.com"
+    "id" "1905065-Travel-Icons-pack"
+    "offset" "1"}]
+  (combine :and
+      (matcher> :->host "www." :?domain)
+      (matcher> :->path "/shots/" :?id)
+      (combine :or (matcher> :->queryparam "offset=" :?offset)
+                   (matcher> :->queryparam "list=" "losers")))
+  {"host" "www.dribble.com"
+   "path" "/shots/1905065-Travel-Icons-pack"
+   "queryparam" ["list=users" "offset=1"]}))
