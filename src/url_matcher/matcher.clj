@@ -109,28 +109,34 @@
                                       ~expression
                                      " to " ~pattern)))
 
+(defprotocol IMatchable
+  "Defines expression that can be mathed to some `pattern` using `contexts`"
+  (match-to [self contexts pattern] "match `self` to `pattern` in `contexts`"))
+
+(extend-type clojure.lang.IPersistentMap
+  IMatchable
+  (match-to [self contexts pattern]
+    (match-to (get self (query/section-name pattern) "")
+              contexts
+              (query/clause-children pattern))))
+
+(extend-type clojure.lang.Seqable
+  IMatchable
+  (match-to [self contexts pattern]
+    (reduce sum-matches (map #(match-section contexts pattern %1) self))))
+
+(extend-type String
+  IMatchable
+  (match-to [self contexts pattern]
+    (match-section contexts pattern self)))
+
 (defn match
   ([contexts pattern expression]
    "Match `pattern` (section + body) to `expression`
    (map of vectors or strings) in `contexts`
    Pattern is represented as a sequence of clauses.
    Expression is a either a map of strings or string"
-   (cond
-     ;;TODO enough cases for multimethod
-     (map? expression)
-     (match contexts
-            (query/clause-children pattern)
-            (get expression (query/section-name pattern) ""))
-
-     (string? expression)
-     (match-section contexts pattern expression)
-
-     (coll? expression)
-     (reduce sum-matches
-             (map #(match-section contexts pattern %1) expression))
-
-     :else
-     (throw (match-error pattern expression))))
+   (match-to expression contexts pattern))
   ([pattern expression]
    "Match `pattern` to `expression` in empty `context`"
    (match empty-context pattern expression)))
