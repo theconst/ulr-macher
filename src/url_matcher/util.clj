@@ -47,3 +47,14 @@
   (reduce (fn [r t] `(zip-transform ~(merge {:zipper zipper, :root r} t)))
           root
           transform-definitions))
+
+(defn try-parse [v]
+  "Tries to parse `v` if it is a boolean or an integer"
+  (cond
+    (re-matches #"[0-9]+" v) (java.math.BigInteger. v)
+
+    :else
+    (condp = v
+      "true" true
+      "false" false
+      v)))
