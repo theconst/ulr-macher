@@ -71,6 +71,10 @@
       (pattern :?v :?z :?v :?v)
       "mmm"
 
+      [{"v" "", "z" "mmm"}, {"v" "m", "z" ""}, {"v" "", "z" "zzz"}, {"v" "z", "z" ""}]
+      (pattern :?v :?z :?v :?v)
+      ["mmm" "zzz"]
+
       [{"v" "", "z" "madamiamadam"},
       {"v" "m", "z" "adamiamada"},
       {"v" "madam", "z" "ia"}]
@@ -117,24 +121,43 @@
       "m")))
 
 (deftest compound-matcher-suite
-  (are [expected matcher expression]
-    (= {::matcher/state ::matcher/success, ::matcher/results expected}
-       (apply-matcher matcher expression))
+  (testing "Successful compound matches"
+    (are [expected matcher expression]
+      (= {::matcher/state ::matcher/success, ::matcher/results expected}
+         (apply-matcher matcher expression))
 
-  [{"domain" "dribble.com"}, {"domain" "integers"}]
-  (combine :or
-           (matcher> :->host :?domain)
-           (matcher> :->query "domain=" :?domain))
-  {"host" "dribble.com", "query" "domain=integers"}
+      [{"y" "3"}]
+      (combine :and (matcher> "y=" :?y))
+      "y=3"
 
-  [{"domain" "dribble.com"
-    "id" "1905065-Travel-Icons-pack"
-    "offset" "1"}]
-  (combine :and
-      (matcher> :->host "www." :?domain)
-      (matcher> :->path "/shots/" :?id)
-      (combine :or (matcher> :->queryparam "offset=" :?offset)
-                   (matcher> :->queryparam "list=" "losers")))
-  {"host" "www.dribble.com"
-   "path" "/shots/1905065-Travel-Icons-pack"
-   "queryparam" ["list=users" "offset=1"]}))
+      [{"x" "2"}]
+      (combine :or (matcher> "x=" :?x))
+      "x=2"
+
+      [{"domain" "dribble.com"}, {"domain" "integers"}]
+      (combine :or
+               (matcher> :->host :?domain)
+               (matcher> :->query "domain=" :?domain))
+      {"host" "dribble.com", "query" "domain=integers"}
+
+      [{"domain" "dribble.com"
+        "id" "1905065-Travel-Icons-pack"
+        "offset" "1"}]
+      (combine :and
+          (matcher> :->host "www." :?domain)
+          (matcher> :->path "/shots/" :?id)
+          (combine :or (matcher> :->queryparam "offset=" :?offset)
+                       (matcher> :->queryparam "list=" "losers")))
+      {"host" "www.dribble.com"
+       "path" "/shots/1905065-Travel-Icons-pack"
+       "queryparam" ["list=users" "offset=1"]}))
+
+  (testing "Failing compound matches"
+    (are [matcher expression]
+      (= ::matcher/failure (::matcher/state (apply-matcher matcher expression)))
+
+      (combine :and (matcher> "y=" :?y) (matcher> "z=" :?y))
+      "z=y"
+
+      (combine :or (matcher> "z") (matcher> "x"))
+      "y")))

@@ -150,18 +150,16 @@
   (:matcher-info (meta matcher)))
 
 (defn make-matcher [pattern]
+  "Makes matcher for a given pattern"
   (with-meta
-    (fn pattern-matcher
-      [contexts expression]
+    (fn pattern-matcher [contexts expression]
       (match contexts pattern expression))
     {:matcher-info (list :matcher pattern)}))
-
 
 (defn disjunction [matchers]
   "Disjunction of `matchers`"
   (with-meta
-    (fn disjunction-matcher
-      [contexts expression]
+    (fn disjunction-matcher [contexts expression]
       (->> matchers
        (map #(apply-matcher %1 contexts expression))
        (reduce sum-matches)))
@@ -170,8 +168,7 @@
 (defn conjunction [matchers]
   "Conjunction of `matchers`"
   (with-meta
-   (fn conjunction-matcher
-     [contexts expression]
+   (fn conjunction-matcher [contexts expression]
      (reduce (fn conjunction-step [{s ::state, contexts ::results :as r} matcher]
                 (case s
                   ::success (matcher contexts expression)
