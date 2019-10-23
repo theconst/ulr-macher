@@ -196,12 +196,7 @@
   "Converts list of queries to a single matcher in the following fashion:
   Distinct clauses are joined using conjunction, queries to a single section
   are joined by disjunction"
-  (->> queries
-    (group-by query/section-name)
-    (vals)
-    (mapv (partial map make-matcher))
-    (mapv disjunction)
-    (conjunction)))
+  (conjunction (mapv make-matcher queries)))
 
 (defn results->maps [{s ::state, rs ::results}]
   "Converts match results to map (or empty if a failure occured)"

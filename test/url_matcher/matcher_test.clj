@@ -179,14 +179,14 @@
       (combine :and (matcher> "x") (matcher> "y")))))
 
 (deftest queries-to-matcher-converter-test
-  (testing "Query is compiled to conjunction of disjunction of clauses"
+  (testing "Query is compiled to conjunction of clauses"
     (are [expected-matcher queries]
       (= (matcher-info expected-matcher)
          (matcher-info (queries->matcher queries)))
 
       (combine :and
-        (combine :or (matcher> :->host "host") (matcher> :->host :?host))
-        (combine :or (matcher> :->path "path")))
+        (matcher> :->host "host") (matcher> :->host :?host)
+        (matcher> :->path "path"))
       [(pattern :->host "host")
        (pattern :->host :?host)
        (pattern :->path "path")])))
