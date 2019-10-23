@@ -6,6 +6,9 @@
    "Returns first item in `coll` that matches `predicate`"
    (first (filter predicate coll)))
 
+(defn remove-last-char [s]
+  (subs s 0 (dec (count s))))
+
 (defn split-string-at [s position]
  "Returns tuple split of `s` at position"
  [(subs s 0 position) (subs s position)])

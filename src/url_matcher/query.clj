@@ -2,9 +2,11 @@
   "Processes query language and returns abstract representation of it"
   (:require [clj-antlr.core :as antlr]
             [clojure.java.io :refer [resource]]
-            [url-matcher.util :refer [find-first zip-transform->]]
+            [url-matcher.util :refer [find-first
+                                      remove-last-char
+                                      zip-transform->]]
             [clojure.zip :as zip]
-            [clojure.string :as s])
+            [clojure.string :as str])
   (:import [clj_antlr ParseError]))
 
 (def clauses-ns (find-ns 'url-matcher.query))
@@ -34,28 +36,40 @@
 (defn- replace-children [prototype new-children]
   (make-clause (first prototype) new-children))
 
-(defmacro defpredicate
+(defn- qualify [tag]
+  "Qualifies `tag` with `clauses-ns`"
+  (assert clauses-ns "Clauses namespace should exist")
+
+  (keyword (str clauses-ns) (name tag)))
+
+(defmacro ^:private defpredicate
   "Defines predicate on parse node. Use this only for compound nodes,
    primitive ones can be tested using string? or similar"
-  ([clause-keyword]
-    `(defpredicate ~clause-keyword #{~clause-keyword}))
-  ([clause-keyword condition]
-   (let [n (name clause-keyword), s (symbol (str n "?"))]
-    `(defn ^{:doc (str "Tests if clause is " ~n)} ~s [c#]
-       (~condition (clause-type c#))))))
+  ([sym]
+    (let [predicate-name (name sym)
+          unqualified-tag (remove-last-char predicate-name)
+          clause-tag (qualify unqualified-tag)]
+      `(defpredicate ~sym
+                     (str "Tests if clause is " ~unqualified-tag) 
+                     #{~clause-tag})))
+  ([sym condition]
+    `(defpredicate ~sym (:doc (meta ~condition)) ~condition))
+  ([sym docstring condition]
+    (assert (str/ends-with? (name sym) "?") "Predicate should end with ?")
+    `(defn ~sym [c#] ~docstring (~condition (clause-type c#)))))
 
-(defpredicate ::tag)
-(defpredicate ::atom)
-(defpredicate ::variable)
-(defpredicate ::section)
-(defpredicate ::name)
-(defpredicate ::query)
-(defpredicate ::subquery)
-(defpredicate ::pattern)
-(defpredicate ::literal)
-
-(def ^{:doc "Truthy if clause has any punctuation marks in it"}
-  has-punctuation? (some-fn variable? subquery? query?))
+(defpredicate tag?)
+(defpredicate atom?)
+(defpredicate variable?)
+(defpredicate section?)
+(defpredicate name?)
+(defpredicate query?)
+(defpredicate subquery?)
+(defpredicate pattern?)
+(defpredicate literal?)
+(defpredicate has-punctuation?
+  "Checks if predicate has punctuation (string that can be removed)"
+  #{::variable ::subquery ::query})
 
 (defn make-zipper [root]
    "Create zipper for clause traversal starting from `root`"
@@ -72,17 +86,11 @@
     (throw (IllegalStateException. (str "No name for " clause)))))
 
 (defn join-children [clause]
-  (replace-children clause (list (s/join (clause-children clause)))))
+  (replace-children clause (list (str/join (clause-children clause)))))
 
 (defn flatten-subquery [clause]
   (make-clause (find-first section? clause)
                (mapcat clause-children (filter pattern? clause))))
-
-(defn qualify [tag]
-  "Qualifies `tag` with `clauses-ns`"
-  (assert clauses-ns "Clauses namespace should exist")
-
-  (keyword (str clauses-ns) (name tag)))
 
 (defn section-name [[section & _ :as query]]
   (when-not (section? section)
