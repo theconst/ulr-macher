@@ -63,6 +63,8 @@
     (let [target (prompt "Enter URL: ")
           pattern (prompt "Enter pattern: ")]
       (print-result (recognize pattern target)))
+   (catch java.net.MalformedURLException ex
+      (println "Illegal URL."))
    (catch IllegalArgumentException ex
       (println "Check correctness of input. Cause: " ex))
    (catch Exception ex
