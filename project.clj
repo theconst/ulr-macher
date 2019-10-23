@@ -7,6 +7,8 @@
 
                  [clj-antlr "0.2.5"]
 
+                 [org.clojure/tools.cli "0.4.2"]
+
                  [org.clojure/tools.logging "0.5.0"]
                  [ch.qos.logback/logback-classic "1.2.3"]]
   :main ^:skip-aot url-matcher.core
