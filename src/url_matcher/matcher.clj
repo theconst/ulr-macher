@@ -145,12 +145,17 @@
   ([matcher expression]
     (matcher empty-context expression)))
 
+(defn matcher-info [matcher]
+  "Gets human-readable informtion about matcher"
+  (:matcher-info (meta matcher)))
+
 (defn make-matcher [pattern]
   (with-meta
     (fn pattern-matcher
       [contexts expression]
       (match contexts pattern expression))
-    {:matcher-info (str "Matcher for " pattern)}))
+    {:matcher-info (list :matcher pattern)}))
+
 
 (defn disjunction [matchers]
   "Disjunction of `matchers`"
@@ -159,8 +164,8 @@
       [contexts expression]
       (->> matchers
        (map #(apply-matcher %1 contexts expression))
-       (reduce sum-matches {::state ::success, ::results []})))
-    {:matcher-info (str "Disjunction of " (map :matcher-info matchers))}))
+       (reduce sum-matches)))
+    {:matcher-info (cons :or (mapv matcher-info matchers))}))
 
 (defn conjunction [matchers]
   "Conjunction of `matchers`"
@@ -173,7 +178,7 @@
                   ::failure r))
              {::state ::success, ::results contexts}
              matchers))
-   {:matcher-info (str "Conjunction of " (map :matcher-info matchers))}))
+   {:matcher-info (cons :and (mapv matcher-info matchers))}))
 
 (defn queries->matcher [queries]
   "Converts list of queries to a single matcher in the following fashion:
@@ -182,12 +187,12 @@
   (->> queries
     (group-by query/section-name)
     (vals)
-    (map (partial map make-matcher))
-    (map disjunction)
+    (mapv (partial map make-matcher))
+    (mapv disjunction)
     (conjunction)))
 
 (defn results->maps [{s ::state, rs ::results}]
   "Converts match results to map (or empty if a failure occured)"
   (case s
     ::success rs
-    ::failure {}))
+    ::failure empty-context))

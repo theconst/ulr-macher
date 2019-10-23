@@ -17,11 +17,11 @@
        ::pattern "host(twitter.com); path(?user/status/?id);"
        ::expression "http://twitter.com/bradfitz/status/562360748727611392"}
 
-
       {::expected [[:id "1905065-Travel-Icons-pack"]
                    ;; Integers are parsed consistently
                    [:offset 1]]
-       ::pattern "host(dribbble.com); path(shots/?id); queryparam(offset=?offset);"
+       ;;same here (absolute and relative paths should be distinguished)
+       ::pattern "host(dribbble.com); path(/shots/?id); queryparam(offset=?offset);"
        ::expression "https://dribbble.com/shots/1905065-Travel-Icons-pack?list=users&offset=1"}
 
       {::expected nil
@@ -32,6 +32,6 @@
        ::pattern "host(dribbble.com); path(shots/?id); queryparam(offset=?offset);"
        ::expression "https://dribbble.com/shots/1905065-Travel-Icons-pack?list=users"}
 
-     {::expected [[:host "dribble"]]
+      {::expected [[:host "dribble"]]
        ::pattern "host(?[host].com); path(/?[host]);"
-       ::expression "https://dribbble.com/dribble"})))
+       ::expression "https://dribble.com/dribble"})))

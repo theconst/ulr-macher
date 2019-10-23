@@ -9,6 +9,7 @@
 (defn url->expression [{host :host
                         {params :query-parameters} :query
                         path :path}]
+  "Transform url to expression that can be matched"
   {"host" host
    "queryparam" params
    "path" path})
@@ -30,15 +31,13 @@
           [(keyword (str k)) (try-parse v)])
         result-map))
 
-(defn recognize [query url-string]
-  (-> query
-    (query/parse)
-    (matcher/queries->matcher)
-    (matcher/apply-matcher (url->expression (url/parse url-string)))
-    (matcher/results->maps)
-    (first)
-    (result-map->result-vec)))
+(defn recognize [queries url-string]
+  (let [query-matcher (matcher/queries->matcher (query/parse queries))
+        expression (url->expression (url/parse url-string))]
+    (-> (matcher/apply-matcher query-matcher expression)
+      (matcher/results->maps)
+      (first)
+      (result-map->result-vec))))
 
-(defn -main
-  [& args]
+(defn -main [& args]
   (println (apply recognize args)))
