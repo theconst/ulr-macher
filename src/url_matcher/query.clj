@@ -10,7 +10,7 @@
   (:import [clj_antlr ParseError]))
 
 (def clauses-ns (find-ns 'url-matcher.query))
-(def ^:dynamic *grammar-path* (.getPath (resource "query.g4")))
+(def ^:dynamic *grammar-path* (slurp (resource "query.g4")))
 (def ^:dynamic *grammar-root* :query)
 
 (def ^{:doc (str "Parser for query. Use the following syntax for variables: "
@@ -50,7 +50,7 @@
           unqualified-tag (remove-last-char predicate-name)
           clause-tag (qualify unqualified-tag)]
       `(defpredicate ~sym
-                     (str "Tests if clause is " ~unqualified-tag) 
+                     (str "Tests if clause is " ~unqualified-tag)
                      #{~clause-tag})))
   ([sym condition]
     `(defpredicate ~sym (:doc (meta ~condition)) ~condition))
