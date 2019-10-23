@@ -9,13 +9,13 @@
   (mapv #(let [n (name %1)]
             (cond
               (str/starts-with? n "?")
-              (query/make-clause ::query/variable [(subs n 1)])
+              (query/make-clause ::query/variable (list (subs n 1)))
 
               (str/starts-with? n "->")
-              (query/make-clause ::query/section [(subs n 2)])
+              (query/make-clause ::query/section (list (subs n 2)))
 
               :else
-              (query/make-clause ::query/literal [(str n)])))
+              (query/make-clause ::query/literal (list (str n)))))
         args))
 
 (defn matcher> [& args]
@@ -161,3 +161,32 @@
 
       (combine :or (matcher> "z") (matcher> "x"))
       "y")))
+
+(deftest matcher-info-suite
+  (testing "Correct metadata is attached to matcher"
+    (are [expected matcher]
+      (= expected (matcher-info matcher))
+
+      '(:matcher ((::query/section "host") (::query/variable "domain")))
+      (matcher> :->host :?domain)
+
+      '(:or (:matcher ((::query/literal "x")))
+            (:matcher ((::query/literal "y"))))
+      (combine :or (matcher> "x") (matcher> "y"))
+
+      '(:and (:matcher ((::query/literal "x")))
+             (:matcher ((::query/literal "y"))))
+      (combine :and (matcher> "x") (matcher> "y")))))
+
+(deftest queries-to-matcher-converter-test
+  (testing "Query is compiled to conjunction of disjunction of clauses"
+    (are [expected-matcher queries]
+      (= (matcher-info expected-matcher)
+         (matcher-info (queries->matcher queries)))
+
+      (combine :and
+        (combine :or (matcher> :->host "host") (matcher> :->host :?host))
+        (combine :or (matcher> :->path "path")))
+      [(pattern :->host "host")
+       (pattern :->host :?host)
+       (pattern :->path "path")])))
