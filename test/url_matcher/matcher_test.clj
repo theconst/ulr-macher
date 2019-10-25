@@ -4,8 +4,9 @@
             [url-matcher.query :as query]
             [clojure.string :as str]))
 
-(defn pattern [& args]
+(defn pattern
   "Compiles pattern from arguments (pattern is variable if starts with '?')"
+  [& args]
   (mapv #(let [n (name %1)]
            (cond
              (str/starts-with? n "?")
@@ -18,8 +19,9 @@
              (query/make-clause ::query/literal (list (str n)))))
         args))
 
-(defn matcher> [& args]
+(defn matcher>
   "Makes matcher for a pattern specified in `args`"
+  [& args]
   (make-matcher (apply pattern args)))
 
 (defn combine [op & args]

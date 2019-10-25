@@ -16,4 +16,5 @@
   :profiles {:uberjar {:aot :all}
              :dev {:dependencies [[proto-repl "0.3.1"]
                                   [proto-repl-charts "0.3.1"]]}}
-  :plugins [[lein-cljfmt "0.6.4"]])
+  :plugins [[lein-cljfmt "0.6.4"]
+            [jonase/eastwood "0.3.5"]])

@@ -2,20 +2,24 @@
   "Common utilitis that cannot be otherwise categorised"
   (:require [clojure.zip :as zip]))
 
-(defn find-first [predicate coll]
+(defn find-first
   "Returns first item in `coll` that matches `predicate`"
+  [predicate coll]
   (first (filter predicate coll)))
 
-(defn remove-last-char [s]
+(defn remove-last-char
   "Removes last characeter from `s`"
+  [s]
   (subs s 0 (dec (count s))))
 
-(defn split-string-at [s position]
+(defn split-string-at
   "Returns tuple split of `s` at position"
+  [s position]
   [(subs s 0 position) (subs s position)])
 
-(defn prefixes-and-suffixes [s]
+(defn prefixes-and-suffixes
   "Returns tuple of prefixes and suffixes"
+  [s]
   (map (partial split-string-at s) (range 0 (inc (count s)))))
 
 (defn make-editor [guard editor]
@@ -25,9 +29,10 @@
               (zip/edit orig editor)
               orig))))
 
-(defmacro zip-transform [{zipper :zipper, guard :guard, editor :editor, root :root}]
+(defmacro zip-transform
   "Transforms tree starting from `root` using `zipper`
    Trasform is applied using `editor` only if `guard` is true"
+  [{zipper :zipper, guard :guard, editor :editor, root :root}]
   (assert zipper "Zipper should be specified")
   (assert editor "Editor should be specified")
 
@@ -38,8 +43,9 @@
           (first)
           (zip/root))))
 
-(defmacro zip-transform-> [{zipper :zipper, root :root} & transform-definitions]
+(defmacro zip-transform->
   "Applies multiple transform definitions starting from `root` using."
+  [{zipper :zipper, root :root} & transform-definitions]
   (assert root "Root should be speified")
   (when-not zipper
     (if-let [faulty (find-first (complement :zipper) transform-definitions)]
@@ -49,8 +55,9 @@
           root
           transform-definitions))
 
-(defn try-parse [v]
+(defn try-parse
   "Tries to parse `v` if it is a boolean or an integer"
+  [v]
   (cond
     (re-matches #"[0-9]+" v) (java.math.BigInteger. v)
 

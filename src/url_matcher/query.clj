@@ -17,8 +17,9 @@
                  "?variable or ?[variable]. See also `query.g4`")}
   query-dsl-parser (antlr/parser *grammar-path* {:root *grammar-root*}))
 
-(defn clause-type [clause]
+(defn clause-type
   "Returns type of clause"
+  [clause]
   (cond
     (string? clause) ::atom
     (keyword? clause) ::tag
@@ -36,8 +37,9 @@
 (defn- replace-children [prototype new-children]
   (make-clause (first prototype) new-children))
 
-(defn- qualify [tag]
+(defn- qualify
   "Qualifies `tag` with `clauses-ns`"
+  [tag]
   (assert clauses-ns "Clauses namespace should exist")
 
   (keyword (str clauses-ns) (name tag)))
@@ -56,7 +58,7 @@
    `(defpredicate ~sym (:doc (meta ~condition)) ~condition))
   ([sym docstring condition]
    (assert (str/ends-with? (name sym) "?") "Predicate should end with ?")
-   `(defn ~sym [c#] ~docstring (~condition (clause-type c#)))))
+   `(defn ^{:doc ~docstring} ~sym [c#] (~condition (clause-type c#)))))
 
 (defpredicate tag?)
 (defpredicate atom?)
@@ -71,38 +73,45 @@
   "Checks if predicate has punctuation (string that can be removed)"
   #{::variable ::subquery ::query})
 
-(defn make-zipper [root]
+(defn make-zipper
   "Create zipper for clause traversal starting from `root`"
+  [root]
   (zip/zipper coll? clause-children replace-children root))
 
-(defn remove-atoms [clause]
+(defn remove-atoms
   "Keeps compound node, as nodes without type maintain no semantic information"
+  [clause]
   (replace-children clause (remove atom? (clause-children clause))))
 
-(defn pull-name [clause]
+(defn pull-name
   "Pulls name of `clause` to the upper level so that it is the only child"
+  [clause]
   (if-let [name-clause (find-first name? (clause-children clause))]
     (replace-children clause (clause-children name-clause))
     (throw (IllegalStateException. (str "No name for " clause)))))
 
-(defn join-children [clause]
+(defn join-children
   "Join children of `clause`"
+  [clause]
   (replace-children clause (list (str/join (clause-children clause)))))
 
-(defn flatten-subquery [clause]
+(defn flatten-subquery
   "Extract pattern subquery from clause"
+  [clause]
   (make-clause (find-first section? clause)
                (mapcat clause-children (filter pattern? clause))))
 
-(defn section-name [[section & _ :as query]]
+(defn section-name
   "Get section name of a section clause"
+  [[section & _ :as query]]
   (when-not (section? section)
     (throw (IllegalArgumentException. (str "Missing section in " query))))
   (let [[_ name] section] name))
 
-(defn parse [query]
+(defn parse
   "Wrapper for `query-dsl-parser` that strips away unnessary characters
   and produces sequence of queries grouped by section"
+  [query]
   (try
     (clause-children
      (zip-transform-> {:zipper make-zipper, :root (query-dsl-parser query)}

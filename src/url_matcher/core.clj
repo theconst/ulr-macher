@@ -9,23 +9,24 @@
             [url-matcher.url :as url]
             [url-matcher.util :as util]))
 
-(defn url->expression [{host :host
-                        {params :query-parameters} :query
-                        path :path}]
+(defn url->expression
   "Transform url to expression that can be matched"
+  [{host :host {params :query-parameters} :query path :path}]
   {"host" host
    "queryparam" params
    "path" path})
 
-(defn result-map->result-vec [result-map]
+(defn result-map->result-vec
   "Adapts result map from matcher by making variables keywords
   and inferring some types"
+  [result-map]
   (mapv (fn [[k v]]
           [(keyword (str k)) (util/try-parse v)])
         result-map))
 
-(defn recognize [queries url-string]
+(defn recognize
   "Recognises `url-string` according to `queries`"
+  [queries url-string]
   (let [query-matcher (matcher/queries->matcher (query/parse queries))
         expression (url->expression (url/parse url-string))]
     (-> (matcher/apply-matcher query-matcher expression)
