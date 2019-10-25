@@ -1,5 +1,5 @@
 (ns url-matcher.util
-  "Common utilitis that cannot be otherwise categorised"
+  "Common utilities that cannot be otherwise categorised"
   (:require [clojure.zip :as zip]))
 
 (defn find-first
@@ -31,7 +31,7 @@
 
 (defmacro zip-transform
   "Transforms tree starting from `root` using `zipper`
-   Trasform is applied using `editor` only if `guard` is true"
+   Transform is applied using `editor` only if `guard` is true"
   [{zipper :zipper, guard :guard, editor :editor, root :root}]
   (assert zipper "Zipper should be specified")
   (assert editor "Editor should be specified")

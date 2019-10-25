@@ -40,7 +40,7 @@
 
 (def cli-options
   [["-u" "--url URL" "URL to match"]
-   ["-p" "--pattern PATTERN" "Pattern to match agains"]
+   ["-p" "--pattern PATTERN" "Pattern to match against"]
    ["-h" "--help" "Displays this message"]])
 
 (defn print-result [result]
