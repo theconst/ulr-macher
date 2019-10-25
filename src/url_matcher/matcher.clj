@@ -77,7 +77,7 @@
 
   (->> [pattern (match-success context expression)]
        (iterate match-step)
-       (drop-while (comp not nil? first))
+       (drop-while (comp some? first))
        (first)
        (match-step) ;; final match step to match empty sequence
        (second)))
