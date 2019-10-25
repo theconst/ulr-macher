@@ -19,10 +19,12 @@
   ([context remaining-input]
    (match-failure context remaining-input "Match failure")))
 
-(def has-state #(comp (partial = %) ::state))
-(def successful? (has-state ::success))
-(def failed? (has-state ::failure))
-(def full? (comp str/blank? ::input))
+(def ^:private has-state #(comp (partial = %) ::state))
+(def ^:private successful? (has-state ::success))
+(def ^:private failed? (has-state ::failure))
+(def ^{:doc "Checks if match is full, i. e. the whole input is consumed"
+       :private true}
+  full? (comp str/blank? ::input))
 
 (defmulti match-pattern
   "Performs non-deterministic matching against 'pattern' section of query"
