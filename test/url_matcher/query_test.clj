@@ -31,8 +31,8 @@
 
   (testing "section? predicate"
     (is (truthy? (section? '(::q/section (::q/literal "host") "(" ")")))))
-    (is (falsy? (section? '(::q/variable (::q/name "v"))))
-    (is (falsy? (section? "string"))))
+  (is (falsy? (section? '(::q/variable (::q/name "v"))))
+      (is (falsy? (section? "string"))))
 
   (testing "name? predicate"
     (is (truthy? (name? '(::q/name "value"))))
@@ -64,7 +64,7 @@
     (is (= '(((::q/section "host") (::q/literal "www.")
                                    (::q/variable "dot-com")
                                    (::q/literal ".com"))))
-           (parse "host(www.?[dot-com].com);"))
+        (parse "host(www.?[dot-com].com);"))
     (is (= '(((::q/section "host") (::q/variable "prefix")
                                    (::q/literal ".")
                                    (::q/variable "host")

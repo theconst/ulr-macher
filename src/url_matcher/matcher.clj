@@ -13,11 +13,11 @@
 (defn match-failure
   "Match failure with additional diagnostic message"
   ([context remaining-input message]
-    [{::state ::failure, ::context context, ::message message,
-      ::input remaining-input}])
+   [{::state ::failure, ::context context, ::message message,
+     ::input remaining-input}])
   ([context remaining-input]
-    "Generic match failure"
-    (match-failure context remaining-input "Match failure")))
+   "Generic match failure"
+   (match-failure context remaining-input "Match failure")))
 
 (def has-state #(comp (partial = %) ::state))
 (def successful? (has-state ::success))
@@ -39,8 +39,8 @@
 (defmethod match-pattern ::query/literal [context literal expression]
   "Matches `literal` to `expression` in `context`"
   (let [[_ value] literal]
-   (log/tracef "Matching '%s' to '%s' [%s]" value expression context)
-   (if (str/starts-with? expression value)
+    (log/tracef "Matching '%s' to '%s' [%s]" value expression context)
+    (if (str/starts-with? expression value)
       (match-success context (subs expression (count value)))
       (match-failure context expression
                      (format "Expected '%s', but was '%s'"
@@ -56,17 +56,17 @@
                            name, old-value)]
     (log/tracef "Matching ?%s to '%s' [%s]" name expression context)
     (mapcat
-      (fn [[prefix suffix]]
-        (if (and has-value (not= old-value prefix))
-          (match-failure context expression (ambiguity prefix))
-          (match-success (into-context prefix) suffix)))
-      (prefixes-and-suffixes expression))))
+     (fn [[prefix suffix]]
+       (if (and has-value (not= old-value prefix))
+         (match-failure context expression (ambiguity prefix))
+         (match-success (into-context prefix) suffix)))
+     (prefixes-and-suffixes expression))))
 
 (defn- match-from [pattern {s ::state, ctx ::context, i ::input :as r}]
   "Match starting from `pattern`"
   (case s
-   ::success (match-pattern ctx pattern i)
-   ::failure [r]))
+    ::success (match-pattern ctx pattern i)
+    ::failure [r]))
 
 (defn- match-step [[[head & tail] matches]]
   "Single step of matching"
@@ -77,25 +77,24 @@
   (log/tracef "Matching %s to '%s' [%s]" pattern expression context)
 
   (->> [pattern (match-success context expression)]
-    (iterate match-step)
-    (drop-while (comp not nil? first))
-    (first)
-    (match-step) ;; final match step to match empty sequence
-    (second)))
-
+       (iterate match-step)
+       (drop-while (comp not nil? first))
+       (first)
+       (match-step) ;; final match step to match empty sequence
+       (second)))
 
 (defn match-section [contexts pattern expression]
   "Match single section of pattern"
   (let [results (mapcat #(match-pattern %1 pattern expression) contexts)
-       partial-matches (filter successful? results)
-       exact-matches (filter full? partial-matches)]
+        partial-matches (filter successful? results)
+        exact-matches (filter full? partial-matches)]
     (if (not-empty exact-matches)
       {::state ::success, ::results (map ::context exact-matches)}
 
       {::state ::failure
        ::results (->> results
-                   (filter failed?)
-                   (map #(select-keys % [::context ::input ::message])))})))
+                      (filter failed?)
+                      (map #(select-keys % [::context ::input ::message])))})))
 
 (def ^{:doc "Contxext with no bound variables"} empty-context [{}])
 
@@ -111,7 +110,7 @@
 (defmacro match-error [pattern expression]
   `(IllegalArgumentException. (format "Unable to match '%s' to %s"
                                       ~expression
-                                     " to " ~pattern)))
+                                      " to " ~pattern)))
 
 (defprotocol IMatchable
   "Defines expression that can be mathed to some `pattern` using `contexts`"
@@ -153,12 +152,12 @@
 (defn apply-matcher
   "Applies matcher in a given context"
   ([matcher contexts expression]
-    (log/tracef "Applying %s to %s"
-                (:matcher-info (meta  matcher))
-                expression)
-    (matcher contexts expression))
+   (log/tracef "Applying %s to %s"
+               (:matcher-info (meta  matcher))
+               expression)
+   (matcher contexts expression))
   ([matcher expression]
-    (matcher empty-context expression)))
+   (matcher empty-context expression)))
 
 (defn matcher-info [matcher]
   "Gets human-readable informtion about matcher"
@@ -176,21 +175,21 @@
   (with-meta
     (fn disjunction-matcher [contexts expression]
       (->> matchers
-       (map #(apply-matcher %1 contexts expression))
-       (reduce sum-matches)))
+           (map #(apply-matcher %1 contexts expression))
+           (reduce sum-matches)))
     {:matcher-info (cons :or (mapv matcher-info matchers))}))
 
 (defn conjunction [matchers]
   "Conjunction of `matchers`"
   (with-meta
-   (fn conjunction-matcher [contexts expression]
-     (reduce (fn conjunction-step [{s ::state, contexts ::results :as r} matcher]
+    (fn conjunction-matcher [contexts expression]
+      (reduce (fn conjunction-step [{s ::state, contexts ::results :as r} matcher]
                 (case s
                   ::success (matcher contexts expression)
                   ::failure r))
-             {::state ::success, ::results contexts}
-             matchers))
-   {:matcher-info (cons :and (mapv matcher-info matchers))}))
+              {::state ::success, ::results contexts}
+              matchers))
+    {:matcher-info (cons :and (mapv matcher-info matchers))}))
 
 (defn queries->matcher [queries]
   "Converts list of queries to a single matcher in the following fashion:

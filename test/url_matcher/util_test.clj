@@ -4,7 +4,6 @@
             [url-matcher.util :refer :all]
             [clojure.zip :as zip]))
 
-
 (deftest zip-transform-suite
   (testing "Transformations using zipper"
     (is (= [["bazz"]]
@@ -20,5 +19,5 @@
 
     (is (= ["bazz" ["buzz"]]
            (zip-transform-> {:zipper zip/vector-zip, :root ["fizz" ["fizz"]]}
-             {:guard #{"fizz"}, :editor (constantly "bazz")}
-             {:guard #{["bazz"]}, :editor (constantly ["buzz"])})))))
+                            {:guard #{"fizz"}, :editor (constantly "bazz")}
+                            {:guard #{["bazz"]}, :editor (constantly ["buzz"])})))))

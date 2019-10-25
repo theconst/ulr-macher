@@ -7,15 +7,15 @@
 (defn pattern [& args]
   "Compiles pattern from arguments (pattern is variable if starts with '?')"
   (mapv #(let [n (name %1)]
-            (cond
-              (str/starts-with? n "?")
-              (query/make-clause ::query/variable (list (subs n 1)))
+           (cond
+             (str/starts-with? n "?")
+             (query/make-clause ::query/variable (list (subs n 1)))
 
-              (str/starts-with? n "->")
-              (query/make-clause ::query/section (list (subs n 2)))
+             (str/starts-with? n "->")
+             (query/make-clause ::query/section (list (subs n 2)))
 
-              :else
-              (query/make-clause ::query/literal (list (str n)))))
+             :else
+             (query/make-clause ::query/literal (list (str n)))))
         args))
 
 (defn matcher> [& args]
@@ -34,7 +34,7 @@
 (deftest variable-mathching-suite
   (testing "Simple variable matching"
     (are [expected expression]
-      (= expected (match-pattern {} (pattern :?v) expression))
+         (= expected (match-pattern {} (pattern :?v) expression))
 
       (match-success {"v" ""} "")
       ""
@@ -54,10 +54,10 @@
 (deftest literal-matching-suite
   (testing "Successful literal matching"
     (are [literal expression]
-       (= (m+ {} (str/replace-first literal expression ""))
-          (match-pattern {} (pattern literal) expression))
-        "" ""
-        "literal" "literal"))
+         (= (m+ {} (str/replace-first literal expression ""))
+            (match-pattern {} (pattern literal) expression))
+      "" ""
+      "literal" "literal"))
   (testing "Faulty litral matching"
     (is (= (m- {} "failure" "Expected 'success', but was 'failure'")
            (match-pattern {} (pattern "success") "failure")))))
@@ -65,7 +65,7 @@
 (deftest matcher-facade-suite
   (testing "Successful matching"
     (are [expected p e]
-      (= {::matcher/state ::matcher/success, ::matcher/results expected} (match p e))
+         (= {::matcher/state ::matcher/success, ::matcher/results expected} (match p e))
 
       [{"v" "", "z" "mmm"} {"v" "m", "z" ""}]
       (pattern :?v :?z :?v :?v)
@@ -76,8 +76,8 @@
       ["mmm" "zzz"]
 
       [{"v" "", "z" "madamiamadam"},
-      {"v" "m", "z" "adamiamada"},
-      {"v" "madam", "z" "ia"}]
+       {"v" "m", "z" "adamiamada"},
+       {"v" "madam", "z" "ia"}]
       (pattern :?v :?z :?v)
       "madamiamadam"
 
@@ -99,8 +99,8 @@
 
   (testing "Faulty matching"
     (are [expected p e]
-      (= {::matcher/state ::matcher/failure, ::matcher/results expected}
-         (match p e))
+         (= {::matcher/state ::matcher/failure, ::matcher/results expected}
+            (match p e))
 
       [{::matcher/input "www.yandex.com"
         ::matcher/context {}
@@ -114,17 +114,17 @@
        {::matcher/input "m"
         ::matcher/context {"v" ""}
         ::matcher/message "Ambiguity for 'v' (old='', new='m')"}
-        {::matcher/input ""
-         ::matcher/context {"v" "m"}
-         ::matcher/message "Ambiguity for 'v' (old='m', new='')"}]
+       {::matcher/input ""
+        ::matcher/context {"v" "m"}
+        ::matcher/message "Ambiguity for 'v' (old='m', new='')"}]
       (pattern :?v :?v)
       "m")))
 
 (deftest compound-matcher-suite
   (testing "Successful compound matches"
     (are [expected matcher expression]
-      (= {::matcher/state ::matcher/success, ::matcher/results expected}
-         (apply-matcher matcher expression))
+         (= {::matcher/state ::matcher/success, ::matcher/results expected}
+            (apply-matcher matcher expression))
 
       [{"y" "3"}]
       (combine :and (matcher> "y=" :?y))
@@ -144,17 +144,17 @@
         "id" "1905065-Travel-Icons-pack"
         "offset" "1"}]
       (combine :and
-          (matcher> :->host "www." :?domain)
-          (matcher> :->path "/shots/" :?id)
-          (combine :or (matcher> :->queryparam "offset=" :?offset)
-                       (matcher> :->queryparam "list=" "losers")))
+               (matcher> :->host "www." :?domain)
+               (matcher> :->path "/shots/" :?id)
+               (combine :or (matcher> :->queryparam "offset=" :?offset)
+                        (matcher> :->queryparam "list=" "losers")))
       {"host" "www.dribble.com"
        "path" "/shots/1905065-Travel-Icons-pack"
        "queryparam" ["list=users" "offset=1"]}))
 
   (testing "Failing compound matches"
     (are [matcher expression]
-      (= ::matcher/failure (::matcher/state (apply-matcher matcher expression)))
+         (= ::matcher/failure (::matcher/state (apply-matcher matcher expression)))
 
       (combine :and (matcher> "y=" :?y) (matcher> "z=" :?y))
       "z=y"
@@ -165,7 +165,7 @@
 (deftest matcher-info-suite
   (testing "Correct metadata is attached to matcher"
     (are [expected matcher]
-      (= expected (matcher-info matcher))
+         (= expected (matcher-info matcher))
 
       '(:matcher ((::query/section "host") (::query/variable "domain")))
       (matcher> :->host :?domain)
@@ -181,12 +181,12 @@
 (deftest queries-to-matcher-converter-test
   (testing "Query is compiled to conjunction of clauses"
     (are [expected-matcher queries]
-      (= (matcher-info expected-matcher)
-         (matcher-info (queries->matcher queries)))
+         (= (matcher-info expected-matcher)
+            (matcher-info (queries->matcher queries)))
 
       (combine :and
-        (matcher> :->host "host") (matcher> :->host :?host)
-        (matcher> :->path "path"))
+               (matcher> :->host "host") (matcher> :->host :?host)
+               (matcher> :->path "path"))
       [(pattern :->host "host")
        (pattern :->host :?host)
        (pattern :->path "path")])))

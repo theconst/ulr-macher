@@ -18,7 +18,7 @@
   query-dsl-parser (antlr/parser *grammar-path* {:root *grammar-root*}))
 
 (defn clause-type [clause]
-   "Returns type of clause"
+  "Returns type of clause"
   (cond
     (string? clause) ::atom
     (keyword? clause) ::tag
@@ -31,7 +31,7 @@
   clause-children rest)
 
 (def ^{:doc "Returns new clause"}
-   make-clause cons)
+  make-clause cons)
 
 (defn- replace-children [prototype new-children]
   (make-clause (first prototype) new-children))
@@ -46,17 +46,17 @@
   "Defines predicate on parse node. Use this only for compound nodes,
    primitive ones can be tested using string? or similar"
   ([sym]
-    (let [predicate-name (name sym)
-          unqualified-tag (remove-last-char predicate-name)
-          clause-tag (qualify unqualified-tag)]
-      `(defpredicate ~sym
-                     (str "Tests if clause is " ~unqualified-tag)
-                     #{~clause-tag})))
+   (let [predicate-name (name sym)
+         unqualified-tag (remove-last-char predicate-name)
+         clause-tag (qualify unqualified-tag)]
+     `(defpredicate ~sym
+        (str "Tests if clause is " ~unqualified-tag)
+        #{~clause-tag})))
   ([sym condition]
-    `(defpredicate ~sym (:doc (meta ~condition)) ~condition))
+   `(defpredicate ~sym (:doc (meta ~condition)) ~condition))
   ([sym docstring condition]
-    (assert (str/ends-with? (name sym) "?") "Predicate should end with ?")
-    `(defn ~sym [c#] ~docstring (~condition (clause-type c#)))))
+   (assert (str/ends-with? (name sym) "?") "Predicate should end with ?")
+   `(defn ~sym [c#] ~docstring (~condition (clause-type c#)))))
 
 (defpredicate tag?)
 (defpredicate atom?)
@@ -72,7 +72,7 @@
   #{::variable ::subquery ::query})
 
 (defn make-zipper [root]
-   "Create zipper for clause traversal starting from `root`"
+  "Create zipper for clause traversal starting from `root`"
   (zip/zipper coll? clause-children replace-children root))
 
 (defn remove-atoms [clause]
@@ -105,11 +105,11 @@
   and produces sequence of queries grouped by section"
   (try
     (clause-children
-      (zip-transform-> {:zipper make-zipper, :root (query-dsl-parser query)}
-        {:zipper zip/seq-zip, :guard tag?, :editor qualify}
-        {:guard has-punctuation? :editor remove-atoms}
-        {:guard literal?, :editor join-children}
-        {:guard variable?, :editor pull-name}
-        {:guard subquery? :editor flatten-subquery}))
+     (zip-transform-> {:zipper make-zipper, :root (query-dsl-parser query)}
+                      {:zipper zip/seq-zip, :guard tag?, :editor qualify}
+                      {:guard has-punctuation? :editor remove-atoms}
+                      {:guard literal?, :editor join-children}
+                      {:guard variable?, :editor pull-name}
+                      {:guard subquery? :editor flatten-subquery}))
     (catch ParseError pe
       (throw (IllegalArgumentException. pe)))))

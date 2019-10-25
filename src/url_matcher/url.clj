@@ -12,7 +12,6 @@
   (if query-string
     (->URLQuery query-string (s/split (or query-string "") #"&"))))
 
-
 (defn parse [url-string]
   "Parse `url-string` or throw `java.net.MalformedURLException`"
   (let [url (java.net.URL. url-string)]

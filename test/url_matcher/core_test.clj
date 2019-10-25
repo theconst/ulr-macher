@@ -6,8 +6,8 @@
   (testing "Sample queries from
            https://gist.github.com/kachayev/4811a5b7a6222b9d10f7e8e460d39f69"
     (are [x]
-      ;; Constraints on order are relaxed (user essentially obtains a map)
-      (= (set (::expected x)) (set (recognize (::pattern x) (::expression x))))
+         ;; Constraints on order are relaxed (user essentially obtains a map)
+         (= (set (::expected x)) (set (recognize (::pattern x) (::expression x))))
 
       {::expected [[:id 562360748727611392],
                    ;; This value is modified, since absolute and relative path

@@ -29,9 +29,9 @@
   (let [query-matcher (matcher/queries->matcher (query/parse queries))
         expression (url->expression (url/parse url-string))]
     (-> (matcher/apply-matcher query-matcher expression)
-      (matcher/results->maps)
-      (first)
-      (result-map->result-vec))))
+        (matcher/results->maps)
+        (first)
+        (result-map->result-vec))))
 
 ;;
 ;; Quick and dirty command line app
@@ -47,9 +47,9 @@
 
 (defn exit
   ([]
-    (exit :success))
+   (exit :success))
   ([status]
-    (System/exit ({:success 0, :wrong-usage 1, :unknown-error 2} status))))
+   (System/exit ({:success 0, :wrong-usage 1, :unknown-error 2} status))))
 
 (defn prompt [msg]
   (println msg)
@@ -63,11 +63,11 @@
     (let [target (prompt "Enter URL: ")
           pattern (prompt "Enter pattern: ")]
       (print-result (recognize pattern target)))
-   (catch java.net.MalformedURLException ex
+    (catch java.net.MalformedURLException ex
       (println "Illegal URL."))
-   (catch IllegalArgumentException ex
+    (catch IllegalArgumentException ex
       (println "Check correctness of input. Cause: " ex))
-   (catch Exception ex
+    (catch Exception ex
       (println "Unknown error ocurred. Cause " ex)
       (exit :unknown-error))))
 
