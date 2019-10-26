@@ -57,7 +57,7 @@
 
 (defn try-parse
   "Tries to parse `v` if it is a boolean or an integer"
-  [v]
+  [^String v]
   (cond
     (re-matches #"[0-9]+" v) (java.math.BigInteger. v)
 
