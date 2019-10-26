@@ -49,7 +49,7 @@
 (defmethod match-pattern ::query/variable [context variable expression]
   (let [[_ name] variable
         old-value (context name)
-        has-value (not (nil? old-value))
+        has-value (some? old-value)
         into-context #(assoc context name %)
         ambiguity (partial format "Ambiguity for '%s' (old='%s', new='%s')"
                            name, old-value)]
@@ -194,13 +194,12 @@
 
 (defn queries->matcher
   "Converts list of queries to a single matcher in the following fashion:
-  Distinct clauses are joined using conjunction, queries to a single section
-  are joined by disjunction"
+  All quries are joined by conjunction"
   [queries]
   (conjunction (mapv make-matcher queries)))
 
 (defn results->maps
-  "Converts match results to map (or empty if a failure occured)"
+  "Converts match results to maps (or empty if a failure occured)"
   [{s ::state, rs ::results}]
   (case s
     ::success rs

@@ -10,12 +10,12 @@
   (:import [clj_antlr ParseError]))
 
 (def clauses-ns (find-ns 'url-matcher.query))
-(def ^:dynamic *grammar-path* (slurp (resource "query.g4")))
-(def ^:dynamic *grammar-root* :query)
+(def grammar (slurp (resource "query.g4")))
+(def grammar-root :query)
 
 (def ^{:doc (str "Parser for query. Use the following syntax for variables: "
                  "?variable or ?[variable]. See also `query.g4`")}
-  query-dsl-parser (antlr/parser *grammar-path* {:root *grammar-root*}))
+  query-dsl-parser (antlr/parser grammar {:root grammar-root}))
 
 (defn clause-type
   "Returns type of clause"

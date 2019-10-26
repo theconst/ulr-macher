@@ -10,7 +10,7 @@
             [url-matcher.util :as util]))
 
 (defn url->expression
-  "Transform url to expression that can be matched"
+  "Transform URL to expression that can be matched"
   [{host :host {params :query-parameters} :query path :path}]
   {"host" host
    "queryparam" params
